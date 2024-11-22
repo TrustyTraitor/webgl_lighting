@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Project 2</title>
+
+<script type="text/javascript" src="./include/utils.js"></script>
+<script type="text/javascript" src="./include/MV.js"></script>
+<script type="text/javascript" src="./include/createTeapotData.js"></script>
+<script type="text/javascript" src="./include/patches.js"></script>
+<script type="text/javascript" src="./include/vertices.js"></script>
+
+<script type="text/javascript" src="./include/xform2.js"></script>
+<script type="text/javascript" src="./include/initShaders.js"></script>
+
+
+<script type="text/javascript" src="./draw.js"></script>
+
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+
+//precision mediump float;
+
+attribute vec4 vPosition;
+attribute vec4 vNormal;
+uniform mat4 M_modelView, M_projection;
+uniform vec4 lightPos;
+varying vec3 N, L, E;
+
+void main() {
+	vec3 pos = -(M_modelView * vPosition).xyz;
+	vec3 light = lightPos.xyz;
+	L = normalize(light - pos);
+
+	E = normalize(pos);
+	N = normalize((M_modelView*vNormal).xyz);
+
+	gl_Position = M_projection * M_modelView * vPosition;
+}
+
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+
+precision mediump float;
+
+uniform vec4 ambientProduct, diffuseProduct, specularProduct;
+uniform float shininess;
+varying vec3 N,L,E;
+
+void main() {
+	vec4 fColor;
+	vec3 H = normalize(L+E);
+	vec4 ambient = ambientProduct;
+	float Kd = max(dot(L,N), 0.0);
+	vec4 diffuse = Kd * diffuseProduct;
+
+	float Ks = pow(max(dot(N,H), 0.0), shininess);
+	vec4 specular = Ks * specularProduct;
+
+	if (dot(L,N) < 0.0) {
+		specular = vec4(0.0, 0.0, 0.0, 1.0);
+	}
+	
+	fColor = ambient + diffuse + specular;
+	fColor.a = 1.0;
+
+	gl_FragColor = fColor;
+}
+
+</script>
+
+</head>
+<body>
+
+<!-- <div style="float:left"> -->
+<canvas id="gl-canvas" width="512" height="512">
+Oops ... your browser doesn't support the HTML5 canvas element
+</canvas>
+
+	<h3>Light</h3>
+	<div class="container">
+		<p>Position</p>
+		<div class="sibling">
+			<label for="light_x">X (-100.0 - 100.0)</label>
+			<input type="range" name="light_x" id="light_x" min="-100.0" max="100.0" step="1.0" value="-58.0">
+		</div>
+		<div class="sibling">
+			<label for="light_y">Y (-100.0 - 100.0)</label>
+			<input type="range" name="light_y" id="light_y" min="-100.0" max="100.0" step="1.0" value="-60.0">
+		</div>
+		<div class="sibling">
+			<label for="light_z">Z (-100.0 - 100.0)</label>
+			<input type="range" name="light_z" id="light_z" min="-100.0" max="100.0" step="1.0" value="100.0">
+		</div>
+	</div>
+
+	<div class="container">
+		<p>Intensity</p>
+		<div class="sibling">
+			<label for="int_diff">Diffuse (1.0 - 5.0)</label>
+			<input type="range" name="int_diff" id="int_diff" min="0.0" max="5.0" step="0.1" value="0.7">
+		</div>
+		<div class="sibling">
+			<label for="int_spec">Specular (1.0 - 5.0)</label>
+			<input type="range" name="int_spec" id="int_spec" min="0.0" max="5.0" step="0.1" value="1.0">
+		</div>
+	</div>
+
+	<hr>
+	
+	<h3>Material</h3>
+	<div class="container">
+		<p>Diffuse</p>
+		<div class="sibling">
+			<label for="r_diff">Red (0.0 - 1.0)</label>
+			<input type="range" name="r_diff" id="r_diff" min="0.0" max="1.0" step="0.1" value="0.25">
+		</div>
+		<div class="sibling">
+			<label for="g_diff">Green (0.0 - 1.0)</label>
+			<input type="range" name="g_diff" id="g_diff" min="0.0" max="1.0" step="0.1" value="0.36">
+		</div>
+		<div class="sibling">
+			<label for="b_diff">Blue (0.0 - 1.0)</label>
+			<input type="range" name="b_diff" id="b_diff" min="0.0" max="1.0" step="0.1" value="0.2">
+		</div>
+	</div>
+
+	<div class="container">
+		<p>Specular</p>
+		<div class="sibling">
+			<label for="r_spec">Red (0.0 - 1.0)</label>
+			<input type="range" name="r_spec" id="r_spec" min="0.0" max="1.0" step="0.1" value="0.8">
+		</div>
+		<div class="sibling">
+			<label for="g_spec">Green (0.0 - 1.0)</label>
+			<input type="range" name="g_spec" id="g_spec" min="0.0" max="1.0" step="0.1" value="0.77">
+		</div>
+		<div class="sibling">
+			<label for="b_spec">Blue (0.0 - 1.0)</label>
+			<input type="range" name="b_spec" id="b_spec" min="0.0" max="1.0" step="0.1" value="0.77">
+		</div>
+	</div>
+
+	<div class="container">
+		<p>Shininess</p>
+		<div class="sibling">
+			<label for="shiny">(1.0 - 500.0)</label>
+			<input type="range" name="shiny" id="shiny" min="0.0" max="500.0" step="1" value="4.0">
+		</div>
+	</div>
+
+<style>
+	label, input {
+		display: block;
+	}
+
+	.container {
+		display: flex;
+	}
+
+	.container p {
+		width: 10ch;
+		font-weight:bold;
+		font-size:large;
+	}
+
+	h3 {
+		padding-bottom: 0;
+		margin-bottom: 0;
+	}
+
+</style>
+
+</body>
+
+</html>
